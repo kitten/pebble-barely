@@ -158,7 +158,6 @@ void process_tuple(Tuple *t) {
 			bluetoothCon = bluetooth_connection_service_peek();
 		} else {
 			bluetoothCon = true;
-
 		}
 		layer_mark_dirty(canvas);
 	}
@@ -214,7 +213,7 @@ void handle_init(void) {
 	app_message_register_inbox_received(in_received_handler);
 	app_message_open(512, 512);
 
-	invertOnDisconnect = persist_exists(PERSIST_INVERTED) ? persist_read_bool(PERSIST_INVERTED) : false;
+	invertOnDisconnect = persist_exists(PERSIST_BLUETOOTH) ? persist_read_bool(PERSIST_BLUETOOTH) : false;
 	isInverted = persist_exists(PERSIST_INVERTED) ? persist_read_bool(PERSIST_INVERTED) : false;
 
 	if (isInverted) {
