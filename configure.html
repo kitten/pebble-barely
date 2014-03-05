@@ -24,6 +24,14 @@
           </select>
         </div>
 
+        <div data-role="fieldcontain">
+          <label for="KEY_BLUETOOTH">Show my Bluetooth Connectivity</label>
+          <select name="KEY_BLUETOOTH" id="KEY_BLUETOOTH" data-role="slider">
+            <option value="off">Off</option>
+            <option value="on">On</option>
+          </select>
+        </div>
+
         <div class="ui-body ui-body-b">
           <fieldset class="ui-grid-a">
               <div class="ui-block-a"><button type="submit" data-theme="d" id="b-cancel">Cancel</button></div>
@@ -36,11 +44,12 @@
     <script>
       function saveOptions() {
         var options = {
-          'KEY_INVERTED': $("#KEY_INVERTED").val()
+          'KEY_INVERTED': $("#KEY_INVERTED").val(),
+          'KEY_BLUETOOTH': $("#KEY_BLUETOOTH").val()
         }
         return options;
       }
-	  
+
 	  function getUrlOptions() {
 	            var params = {};
 	            var bits = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/g, function (match, key, value) {
@@ -54,7 +63,7 @@
 	          for (key in params) {
 	            var field = $("#"+key);
 	            if (field !== null) {
-	              var value = decodeURIComponent(params[key]);           
+	              var value = decodeURIComponent(params[key]);
 	              field.val(value).slider("refresh");
 	            }
 	          }
@@ -62,7 +71,7 @@
 
       $().ready(function() {
 		  setUrlOptions();
-		  
+
         $("#b-cancel").click(function() {
           console.log("Cancel");
           document.location = "pebblejs://close";

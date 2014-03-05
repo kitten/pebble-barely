@@ -1,13 +1,16 @@
 #include <pebble.h>
 
 enum {
-	KEY_INVERTED = 0
+	KEY_INVERTED = 0,
+	KEY_BLUETOOTH = 1
 };
 
 #define PERSIST_INVERTED 1
+#define PERSIST_BLUETOOTH 2
 
 static Window *window;
 static Layer *canvas;
+static InverterLayer *invert;
 
 static Layer *topLeft;
 static Layer *topRight;
@@ -20,6 +23,9 @@ int displayBottomLeft = 0;
 int displayBottomRight = 0;
 
 bool isInverted = false;
+bool invertOnDisconnect = false;
+
+bool bluetoothCon = true;
 
 static unsigned short get_display_hour(unsigned short hour) {
 	if (clock_is_24h_style()) {
@@ -78,8 +84,16 @@ void canvas_update_callback(Layer *layer, GContext* ctx) {
 	if (isInverted) {
 		graphics_context_set_fill_color(ctx, GColorWhite);
 	}
-	graphics_fill_rect(ctx, GRect(71,0,3,168), 0, GCornerNone);
-	graphics_fill_rect(ctx, GRect(0,83,144,3), 0, GCornerNone);
+
+	if (bluetoothCon) {
+		graphics_fill_rect(ctx, GRect(71,0,3,168), 0, GCornerNone);
+		graphics_fill_rect(ctx, GRect(0,83,144,3), 0, GCornerNone);
+	} else {
+		graphics_fill_rect(ctx, GRect(71,0,1,168), 0, GCornerNone);
+		graphics_fill_rect(ctx, GRect(73,0,1,168), 0, GCornerNone);
+		graphics_fill_rect(ctx, GRect(0,83,144,1), 0, GCornerNone);
+		graphics_fill_rect(ctx, GRect(0,85,144,1), 0, GCornerNone);
+	}
 }
 
 void topLeft_update_callback(Layer *layer, GContext* ctx) {
@@ -122,7 +136,7 @@ void process_tuple(Tuple *t) {
 		} else {
 			isInverted = false;
 		}
-		
+
 		if (isInverted) {
 			window_set_background_color(window, GColorBlack);
 		} else {
@@ -132,6 +146,20 @@ void process_tuple(Tuple *t) {
 		layer_mark_dirty(topLeft);
 		layer_mark_dirty(bottomRight);
 		layer_mark_dirty(bottomLeft);
+		layer_mark_dirty(canvas);
+	} else if (key == KEY_BLUETOOTH) {
+		if (strcmp(string_value, "on") == 0) {
+			invertOnDisconnect = true;
+		} else {
+			invertOnDisconnect = false;
+		}
+
+		if (invertOnDisconnect) {
+			bluetoothCon = bluetooth_connection_service_peek();
+		} else {
+			bluetoothCon = true;
+
+		}
 		layer_mark_dirty(canvas);
 	}
 }
@@ -170,21 +198,31 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 	}
 }
 
+void handle_bluetooth_con(bool connected) {
+	if (invertOnDisconnect) {
+		bluetoothCon = connected;
+		layer_mark_dirty(canvas);
+	} else {
+		bluetoothCon = true;
+	}
+}
+
 void handle_init(void) {
 	window = window_create();
 	window_stack_push(window, true);
-	
-	app_message_register_inbox_received(in_received_handler);           
+
+	app_message_register_inbox_received(in_received_handler);
 	app_message_open(512, 512);
-	
+
+	invertOnDisconnect = persist_exists(PERSIST_INVERTED) ? persist_read_bool(PERSIST_INVERTED) : false;
 	isInverted = persist_exists(PERSIST_INVERTED) ? persist_read_bool(PERSIST_INVERTED) : false;
-	
+
 	if (isInverted) {
 		window_set_background_color(window, GColorBlack);
 	} else {
 		window_set_background_color(window, GColorWhite);
 	}
-	
+
 	struct tm *tick_time;
 	time_t temp = time(NULL);
 	tick_time = localtime(&temp);
@@ -202,37 +240,43 @@ void handle_init(void) {
 	if (displayBottomLeft != minute / 10 % 10) {
 		displayBottomLeft = minute / 10 % 10;
 	}
-	
+
 	Layer *window_layer = window_get_root_layer(window);
 	GRect bounds = layer_get_frame(window_layer);
-	
+
 	canvas = layer_create(bounds);
 	layer_set_update_proc(canvas, canvas_update_callback);
 	layer_add_child(window_layer, canvas);
-	
+
 	topLeft = layer_create(GRect(0,0,71,83));
 	layer_set_update_proc(topLeft, topLeft_update_callback);
 	layer_add_child(window_layer, topLeft);
-	
+
 	topRight = layer_create(GRect(73,0,71,83));
 	layer_set_update_proc(topRight, topRight_update_callback);
 	layer_add_child(window_layer, topRight);
-	
+
 	bottomLeft = layer_create(GRect(0,85,71,83));
 	layer_set_update_proc(bottomLeft, bottomLeft_update_callback);
 	layer_add_child(window_layer, bottomLeft);
-	
+
 	bottomRight = layer_create(GRect(73,85,71,83));
 	layer_set_update_proc(bottomRight, bottomRight_update_callback);
 	layer_add_child(window_layer, bottomRight);
-	
+
+	invert = inverter_layer_create(bounds);
+    layer_set_hidden(inverter_layer_get_layer(invert), true);
+
 	tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
+	bluetooth_connection_service_subscribe(handle_bluetooth_con);
 }
 
 void handle_deinit(void) {
 	tick_timer_service_unsubscribe();
+	bluetooth_connection_service_unsubscribe();
 	window_destroy(window);
 	persist_write_bool(PERSIST_INVERTED, isInverted);
+	persist_write_bool(PERSIST_BLUETOOTH, invertOnDisconnect);
 }
 
 int main(void) {
