@@ -13,10 +13,10 @@ enum {
 static Window *window;
 static Layer *canvas;
 
-static const uint32_t const segmentsFull[] = { 200 };
-static const uint32_t const segmentsQuarterPast[] = { 200, 100, 200 };
-static const uint32_t const segmentsHalf[] = { 200, 100, 200, 100, 200 };
-static const uint32_t const segmentsQuarterTo[] = { 200, 100, 200, 100, 200, 100, 200 };
+static const uint32_t const segmentsFull[] = { 100 };
+static const uint32_t const segmentsQuarterPast[] = { 100, 100, 100 };
+static const uint32_t const segmentsHalf[] = { 100, 100, 100, 100, 100 };
+static const uint32_t const segmentsQuarterTo[] = { 100, 100, 100, 100, 100, 100, 100 };
 
 static VibePattern patternFull = {
 	.durations = segmentsFull,
