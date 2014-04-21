@@ -37,7 +37,7 @@ Pebble.addEventListener("webviewclosed", function(e) {
 		}
 		console.log("Trace: Options Recorded - " + JSON.stringify(options));
 
-		var dict = { 0: options.KEY_INVERTED, 1: options.KEY_BLUETOOTH };
+		var dict = { 0: options.KEY_INVERTED, 1: options.KEY_BLUETOOTH, 2: options.KEY_VIBE };
 		console.log("Trace: Dict Sending - " + JSON.stringify(dict));
 
 		Pebble.sendAppMessage(dict,
